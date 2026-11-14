@@ -1,0 +1,125 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Central de IAs</title>
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#0c1020;color:#f4f5ff;
+ font-family:Arial,sans-serif;padding:20px;
+}
+main{max-width:800px;margin:auto}
+header{display:flex;justify-content:space-between;align-items:center}
+.logo{font-weight:bold;font-size:20px}
+.status{color:#57d6a2;font-size:12px}
+h1{font-size:35px;margin:40px 0 10px}
+.sub{color:#9ba6c4;line-height:1.5}
+.models{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:25px 0}
+.card,.chat,.tools{
+ background:#171e32;border:1px solid #29334d;
+ border-radius:16px;padding:16px
+}
+.card h3{margin:0 0 8px}
+.card p{color:#aab3ce;font-size:13px;margin:0}
+h2{font-size:17px}
+.messages{min-height:220px;max-height:350px;overflow:auto}
+.message{padding:12px;margin:12px 0;border-radius:12px;line-height:1.5}
+.bot{background:#242e49}
+.user{background:#384577;margin-left:25px}
+.name{font-size:11px;color:#aab8ff;font-weight:bold;margin-bottom:5px}
+form{display:flex;gap:8px;margin-top:15px}
+input{
+ flex:1;min-width:0;background:#0c1020;
+ border:1px solid #35405c;border-radius:10px;
+ padding:13px;color:white;font-size:14px
+}
+button{
+ background:#8797ff;color:#101426;border:0;
+ border-radius:10px;padding:12px 16px;font-weight:bold
+}
+.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.tool{background:#10172a;padding:13px;border-radius:10px;color:#c2cbea;font-size:13px}
+.note{color:#d9c98c;background:#292518;padding:13px;border-radius:12px;font-size:12px;line-height:1.5;margin-top:20px}
+@media(max-width:450px){body{padding:14px}.models{gap:8px}.card{padding:12px}h1{font-size:30px}}
+</style>
+</head>
+<body>
+<main>
+<header>
+<div class="logo">⚡ CENTRAL DE IAs</div>
+<div class="status">● ONLINE</div>
+</header>
+
+<h1>Uma central.<br>Duas inteligências.</h1>
+<p class="sub">Seu espaço para organizar tarefas e conectar ChatGPT e Claude.</p>
+
+<div class="models">
+<div class="card">
+<h3>🤖 ChatGPT</h3>
+<p>Planejamento, análise e ideias.</p>
+</div>
+<div class="card">
+<h3>🧠 Claude</h3>
+<p>Escrita, revisão e colaboração.</p>
+</div>
+</div>
+
+<h2>💬 Conversa da Central</h2>
+<div class="chat">
+<div class="messages" id="messages">
+<div class="message bot">
+<div class="name">CENTRAL</div>
+Olá! Bem-vindo à sua Central de IAs. Envie uma mensagem para testar nossa interface!
+</div>
+</div>
+<form id="form">
+<input id="prompt" placeholder="Digite sua mensagem..." maxlength="500" required>
+<button type="submit">Enviar</button>
+</form>
+</div>
+
+<h2>🧰 Ferramentas</h2>
+<div class="tools">
+<div class="tool">📁 Arquivos</div>
+<div class="tool">🔌 Conectores MCP</div>
+<div class="tool">🛒 Kiwify</div>
+<div class="tool">🕘 Histórico</div>
+</div>
+
+<div class="note">
+<strong>Modo demonstração:</strong> esta primeira versão ainda não está conectada às APIs do ChatGPT ou Claude. As mensagens não são enviadas a esses serviços.
+</div>
+</main>
+
+<script>
+const form=document.getElementById("form");
+const input=document.getElementById("prompt");
+const messages=document.getElementById("messages");
+
+form.addEventListener("submit",function(e){
+ e.preventDefault();
+ const value=input.value.trim();
+ if(!value)return;
+
+ const user=document.createElement("div");
+ user.className="message user";
+ user.textContent=value;
+ messages.appendChild(user);
+
+ const bot=document.createElement("div");
+ bot.className="message bot";
+ bot.innerHTML="<div class='name'>CENTRAL</div>";
+ const answer=document.createElement("div");
+ answer.textContent="Mensagem recebida! Nossa interface está funcionando. Em breve vamos preparar as conexões com as duas IAs.";
+ bot.appendChild(answer);
+ messages.appendChild(bot);
+
+ input.value="";
+ messages.scrollTop=messages.scrollHeight;
+});
+</script>
+</body>
+</html>
