@@ -1,125 +1,1000 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0d10">
+<meta name="description" content="Central de IAs: ChatGPT e Claude em um só lugar.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%A0%3C/text%3E%3C/svg%3E">
 <title>Central de IAs</title>
 <style>
-*{box-sizing:border-box}
-body{
- margin:0;background:#0c1020;color:#f4f5ff;
- font-family:Arial,sans-serif;padding:20px;
+/* ===== 1. TOKENS ===== */
+:root{
+  --bg:#0b0d10; --panel:#12161b; --panel2:#181d24; --line:#242b35; --line2:#323b48;
+  --text:#e6eaf0; --muted:#98a2b0; --accent:#7c9cff;
+  --gpt:#10a37f; --claude:#d97757; --ok:#4ade80; --warn:#fbbf24; --err:#f87171;
+  --r:14px; --ease:cubic-bezier(.2,.7,.2,1); color-scheme:dark;
 }
-main{max-width:800px;margin:auto}
-header{display:flex;justify-content:space-between;align-items:center}
-.logo{font-weight:bold;font-size:20px}
-.status{color:#57d6a2;font-size:12px}
-h1{font-size:35px;margin:40px 0 10px}
-.sub{color:#9ba6c4;line-height:1.5}
-.models{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:25px 0}
-.card,.chat,.tools{
- background:#171e32;border:1px solid #29334d;
- border-radius:16px;padding:16px
+*{box-sizing:border-box;margin:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:radial-gradient(1200px 600px at 80% -10%,#161d33 0,var(--bg) 60%) fixed;color:var(--text);
+  font:15px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button,input,textarea,select{font:inherit;color:inherit}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:8px}
+.skip{position:absolute;left:8px;top:-60px;z-index:20;background:var(--accent);color:#0b0d10;border:0;padding:8px 12px;border-radius:8px;font-weight:600}
+.skip:focus{top:8px}
+
+/* ===== 2. LAYOUT ===== */
+.app{display:flex;height:100dvh}
+.side{width:236px;background:rgba(18,22,27,.9);border-right:1px solid var(--line);padding:16px 12px;display:flex;flex-direction:column;gap:6px}
+.brand{font-weight:700;font-size:18px;padding:4px 10px 14px}
+.brand span{color:var(--accent)}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{background:none;border:0;text-align:left;padding:11px 12px;min-height:44px;border-radius:10px;color:var(--muted);cursor:pointer;display:flex;gap:10px;align-items:center;transition:background .2s,color .2s}
+.nav button:hover{background:var(--panel2);color:var(--text)}
+.nav button[aria-current=page]{background:var(--panel2);color:var(--text);box-shadow:inset 3px 0 var(--accent)}
+.nav i{font-style:normal;width:20px;text-align:center}
+.side small{margin-top:auto;color:var(--muted);padding:8px 10px;font-size:12px}
+.main{flex:1;display:flex;flex-direction:column;min-width:0}
+.top{padding:14px 20px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:10px}
+.top h1{font-size:18px;outline:0}
+#banner{background:#3a2c0b;color:var(--warn);padding:8px 20px;font-size:13px;border-bottom:1px solid #5c4a14}
+.view{flex:1;overflow:auto;padding:20px;min-height:0;animation:in .28s var(--ease)}
+.wrap{max-width:900px;margin:0 auto}
+@keyframes in{from{opacity:0;transform:translateY(8px)}}
+
+/* ===== 3. COMPONENTES ===== */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px;transition:border-color .2s,transform .2s}
+.card:hover{border-color:var(--line2)}
+.card h2{font-size:16px;margin-bottom:6px}
+.card p,.muted{color:var(--muted);font-size:14px}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
+.grid .card{margin-bottom:0}
+.grid+.card,.grid+.grid{margin-top:14px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.row.sp{justify-content:space-between}
+.btn{background:var(--accent);color:#0b0d10;border:0;border-radius:10px;padding:10px 14px;min-height:44px;font-weight:600;cursor:pointer;transition:transform .15s,opacity .2s,background .2s}
+.btn:hover{opacity:.92}.btn:active{transform:scale(.97)}
+.btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
+.btn.danger{background:none;color:var(--err);border:1px solid var(--line);font-weight:500}
+.btn.sm{min-height:36px;padding:6px 10px;font-size:14px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.tag{font-size:12px;border-radius:99px;padding:2px 10px;border:1px solid var(--line);color:var(--muted);white-space:nowrap;max-width:100%;overflow:hidden;text-overflow:ellipsis}
+.tag.ok{color:var(--ok);border-color:#22543a}
+.tag.warn{color:var(--warn);border-color:#5c4a14}
+.tag.err{color:var(--err);border-color:#6b2a2a}
+input[type=text],input[type=url],input[type=search],textarea,select{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;font-size:16px}
+.list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.item{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 12px;animation:in .22s var(--ease)}
+.item.pinned{border-color:#3d4a73}
+.item .t{min-width:0;flex:1 1 180px}
+.item .t b,.item .link{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.link{background:none;border:0;text-align:left;cursor:pointer;font-weight:600;width:100%;padding:2px 0}
+.link:hover{color:var(--accent)}
+.edit{flex-basis:100%;display:grid;gap:8px;grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+.edit .row{grid-column:1/-1}
+.pin{background:none;border:0;font-size:18px;cursor:pointer;min-width:44px;min-height:44px;opacity:.4;transition:opacity .2s,transform .2s}
+.pin[aria-pressed=true]{opacity:1;transform:rotate(-20deg)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.chip{background:var(--panel2);border:1px solid var(--line);border-radius:99px;padding:6px 12px;min-height:36px;cursor:pointer;font-size:13px;color:var(--muted)}
+.chip[aria-pressed=true]{background:var(--accent);color:#0b0d10;border-color:var(--accent);font-weight:600}
+.empty{color:var(--muted);text-align:center;padding:28px 10px;border:1px dashed var(--line);border-radius:var(--r)}
+.drop{border:2px dashed var(--line2);border-radius:var(--r);padding:18px;text-align:center;color:var(--muted);transition:border-color .2s,background .2s}
+.drop.over{border-color:var(--accent);background:#141b2e}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block;margin-right:6px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+td,th{text-align:left;padding:8px 6px;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--muted);font-weight:500}
+#toasts{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;z-index:30;display:flex;flex-direction:column;gap:8px;width:min(92vw,420px)}
+.toast{background:#222a35;border:1px solid #3a4452;padding:8px 8px 8px 14px;border-radius:12px;display:flex;gap:10px;align-items:center;justify-content:space-between;font-size:14px;animation:in .25s var(--ease)}
+
+.prev{white-space:pre-wrap;overflow-wrap:anywhere;font-size:13px;color:var(--muted);margin-top:6px;max-height:140px;overflow:auto}
+#banner .btn{margin-left:8px}
+
+/* ===== 4. CHAT ===== */
+#v-chat{display:flex;flex-direction:column;padding:0}
+.msgs{flex:1;overflow:auto;padding:20px;display:flex;flex-direction:column;gap:10px;scroll-behavior:smooth}
+.msg{max-width:min(85%,660px);padding:10px 14px;border-radius:16px;white-space:pre-wrap;overflow-wrap:anywhere;animation:pop .22s var(--ease)}
+@keyframes pop{from{opacity:0;transform:scale(.96) translateY(6px)}}
+.msg.user{align-self:flex-end;background:#26324f;border-bottom-right-radius:4px}
+.msg.assistant{align-self:flex-start;background:var(--panel2);border:1px solid var(--line);border-bottom-left-radius:4px}
+.msg.system{align-self:center;border:1px dashed #5c4a14;color:var(--warn);font-size:13px;max-width:92%}
+.msg.wait{align-self:flex-start;color:var(--muted);font-style:italic}
+.composer{border-top:1px solid var(--line);padding:12px 16px;background:var(--panel);display:flex;flex-direction:column;gap:8px}
+.composer textarea{resize:none;max-height:140px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.seg button{background:var(--panel2);border:0;padding:8px 14px;min-height:44px;cursor:pointer;color:var(--muted);transition:background .2s}
+.seg button[aria-pressed=true]{color:#0b0d10;font-weight:600}
+.seg button[data-p=chatgpt][aria-pressed=true]{background:var(--gpt)}
+.seg button[data-p=claude][aria-pressed=true]{background:var(--claude)}
+
+/* ===== 5. RESPONSIVO / MOVIMENTO ===== */
+@media (max-width:760px){
+  .app{flex-direction:column-reverse}
+  .side{width:100%;flex-direction:row;padding:4px 4px calc(4px + env(safe-area-inset-bottom,0px));border-right:0;border-top:1px solid var(--line)}
+  .brand,.side small{display:none}
+  .nav{flex-direction:row;width:100%;justify-content:space-around}
+  .nav button{flex-direction:column;gap:0;padding:6px 2px;font-size:11px;text-align:center;flex:1;justify-content:center;box-shadow:none!important}
+  .top{padding:12px 14px;padding-top:calc(12px + env(safe-area-inset-top,0px))}
+  #banner{padding:8px 14px}
+  .view{padding:14px}.msgs{padding:14px}.msg{max-width:92%}
+  #toasts{bottom:calc(78px + env(safe-area-inset-bottom,0px))}
 }
-.card h3{margin:0 0 8px}
-.card p{color:#aab3ce;font-size:13px;margin:0}
-h2{font-size:17px}
-.messages{min-height:220px;max-height:350px;overflow:auto}
-.message{padding:12px;margin:12px 0;border-radius:12px;line-height:1.5}
-.bot{background:#242e49}
-.user{background:#384577;margin-left:25px}
-.name{font-size:11px;color:#aab8ff;font-weight:bold;margin-bottom:5px}
-form{display:flex;gap:8px;margin-top:15px}
-input{
- flex:1;min-width:0;background:#0c1020;
- border:1px solid #35405c;border-radius:10px;
- padding:13px;color:white;font-size:14px
-}
-button{
- background:#8797ff;color:#101426;border:0;
- border-radius:10px;padding:12px 16px;font-weight:bold
-}
-.tools{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
-.tool{background:#10172a;padding:13px;border-radius:10px;color:#c2cbea;font-size:13px}
-.note{color:#d9c98c;background:#292518;padding:13px;border-radius:12px;font-size:12px;line-height:1.5;margin-top:20px}
-@media(max-width:450px){body{padding:14px}.models{gap:8px}.card{padding:12px}h1{font-size:30px}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
-<main>
-<header>
-<div class="logo">⚡ CENTRAL DE IAs</div>
-<div class="status">● ONLINE</div>
-</header>
-
-<h1>Uma central.<br>Duas inteligências.</h1>
-<p class="sub">Seu espaço para organizar tarefas e conectar ChatGPT e Claude.</p>
-
-<div class="models">
-<div class="card">
-<h3>🤖 ChatGPT</h3>
-<p>Planejamento, análise e ideias.</p>
+<button class="skip" id="skip" type="button">Pular para o conteúdo</button>
+<div class="app">
+  <aside class="side">
+    <div class="brand">Central de <span>IAs</span></div>
+    <nav class="nav" id="nav" aria-label="Navegação principal"></nav>
+    <small id="persist">v2.4 · dados ficam só neste navegador</small>
+  </aside>
+  <div class="main">
+    <header class="top">
+      <h1 id="title" tabindex="-1">Painel</h1>
+      <span class="tag" id="bk-status" role="status"></span>
+    </header>
+    <div id="banner" role="alert" hidden></div>
+    <section class="view" id="v-painel" aria-labelledby="title"></section>
+    <section class="view" id="v-chat" aria-labelledby="title" hidden></section>
+    <section class="view" id="v-historico" aria-labelledby="title" hidden></section>
+    <section class="view" id="v-arquivos" aria-labelledby="title" hidden></section>
+    <section class="view" id="v-mcp" aria-labelledby="title" hidden></section>
+    <section class="view" id="v-kiwify" aria-labelledby="title" hidden></section>
+  </div>
 </div>
-<div class="card">
-<h3>🧠 Claude</h3>
-<p>Escrita, revisão e colaboração.</p>
-</div>
-</div>
-
-<h2>💬 Conversa da Central</h2>
-<div class="chat">
-<div class="messages" id="messages">
-<div class="message bot">
-<div class="name">CENTRAL</div>
-Olá! Bem-vindo à sua Central de IAs. Envie uma mensagem para testar nossa interface!
-</div>
-</div>
-<form id="form">
-<input id="prompt" placeholder="Digite sua mensagem..." maxlength="500" required>
-<button type="submit">Enviar</button>
-</form>
-</div>
-
-<h2>🧰 Ferramentas</h2>
-<div class="tools">
-<div class="tool">📁 Arquivos</div>
-<div class="tool">🔌 Conectores MCP</div>
-<div class="tool">🛒 Kiwify</div>
-<div class="tool">🕘 Histórico</div>
-</div>
-
-<div class="note">
-<strong>Modo demonstração:</strong> esta primeira versão ainda não está conectada às APIs do ChatGPT ou Claude. As mensagens não são enviadas a esses serviços.
-</div>
-</main>
+<div id="toasts" aria-live="polite"></div>
 
 <script>
-const form=document.getElementById("form");
-const input=document.getElementById("prompt");
-const messages=document.getElementById("messages");
+"use strict";
+/* ============================================================
+   CENTRAL DE IAs — v2.4
+   Seções: 1 Config · 2 Estado · 3 Validação · 4 Armazenamento ·
+           5 Utilitários · 6 Backend · 7 Backup · 8 Telas · 9 Início
+   NUNCA coloque chaves de API ou senhas neste arquivo (ele é público).
+   Chaves ficam só no backend (ex.: variáveis de ambiente do Netlify).
+   ============================================================ */
 
-form.addEventListener("submit",function(e){
- e.preventDefault();
- const value=input.value.trim();
- if(!value)return;
+/* ---------- 1. CONFIG ---------- */
+const APP_VERSION = "2.4";
+const CONFIG = {
+  backendUrl: "",            // opcional; também pode ser definida na tela Ferramentas
+  chatPath: "/chat",         // POST {provider, messages} -> {reply} | {error}
+  statusPath: "/status",     // GET -> {providers:{chatgpt:bool, claude:bool}}
+  mcpPath: "/mcp/tools",     // GET -> {servers:[{name,status,tools:[{name,description,category}]}]}
+  kiwifyPath: "/kiwify/products", // GET -> {products:[{id,name,status,price,currency}]}
+  revKey: "central-ias-v2-rev",   // contador de revisão: protege contra várias abas
+  chatTimeoutMs: 60000,
+  statusTimeoutMs: 8000,
+  storageKey: "central-ias-v2"   // mesma chave da v2: dados antigos continuam valendo
+};
+const LIMITS = { chats: 500, msgs: 2000, text: 100000, title: 120, folder: 40,
+                 files: 500, connectors: 50, note: 300, trash: 30, preview: 400,
+                 fileBytes: 25 * 1024 * 1024,   // limite por arquivo registrado
+                 backupBytes: 10 * 1024 * 1024 };   // limite por arquivo de backup: vale para exportar E importar
+const ALLOWED_EXT = ["txt", "md", "csv", "json", "pdf", "png", "jpg", "jpeg", "webp"];
+const TEXT_EXT = ["txt", "md", "csv", "json"];   // aceitam prévia de texto
+const PROVIDERS = {
+  chatgpt: { nome: "ChatGPT", cor: "var(--gpt)",    desc: "OpenAI · requer backend com chave de API" },
+  claude:  { nome: "Claude",  cor: "var(--claude)", desc: "Anthropic · requer backend com chave de API" }
+};
+const VIEWS = [
+  { id: "painel",    icone: "🏠", nome: "Painel" },
+  { id: "chat",      icone: "💬", nome: "Conversa" },
+  { id: "historico", icone: "🕘", nome: "Histórico" },
+  { id: "arquivos",  icone: "📁", nome: "Arquivos" },
+  { id: "mcp",       icone: "🧩", nome: "Ferramentas" },
+  { id: "kiwify",    icone: "🛒", nome: "Kiwify" }
+];
 
- const user=document.createElement("div");
- user.className="message user";
- user.textContent=value;
- messages.appendChild(user);
+/* ---------- 2. ESTADO ---------- */
+// store = dados persistidos. Os demais ficam só em memória.
+const store = { chats: [], files: [], connectors: [], trash: [], provider: "claude", activeId: null, backendUrl: "" };
+// Conexão por IA: idle (não testado) | testing | ok | fail. Nunca é persistida.
+const conn = {};
+Object.keys(PROVIDERS).forEach((k) => { conn[k] = { state: "idle" }; });
+let busy = false, waitId = null, current = "painel", draft = "";
+let persistOk = true, locked = false, bannerKind = "", testSeq = 0;
+let stale = false, myRev = 0, sessionToken = "";   // token de acesso: só em memória, nunca salvo
+let mcpData = null, kwData = null, mcpBusy = false, kwBusy = false, kwFilter = "";
+let histFilter = "", histFolder = "", editingId = null, fileFilter = "", fileSort = "recent";
 
- const bot=document.createElement("div");
- bot.className="message bot";
- bot.innerHTML="<div class='name'>CENTRAL</div>";
- const answer=document.createElement("div");
- answer.textContent="Mensagem recebida! Nossa interface está funcionando. Em breve vamos preparar as conexões com as duas IAs.";
- bot.appendChild(answer);
- messages.appendChild(bot);
+/* ---------- 3. VALIDAÇÃO ---------- */
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+const str = (v, max, fb = "") => (typeof v === "string" ? v.slice(0, max) : fb);
+const num = (v, fb) => (Number.isFinite(v) ? v : fb);
 
- input.value="";
- messages.scrollTop=messages.scrollHeight;
+// Aceita https (ou http só em localhost), sem usuário/senha/query/hash: evita tokens em URLs.
+function urlOk(u, allowLocal) {
+  try {
+    const x = new URL(u);
+    const local = x.hostname === "localhost" || x.hostname === "127.0.0.1";
+    const proto = x.protocol === "https:" || (allowLocal && local && x.protocol === "http:");
+    return proto && !x.username && !x.password && !x.search && !x.hash;
+  } catch (e) { return false; }
+}
+// Backend: URL https (ou http em localhost) ou caminho do mesmo site, como /api.
+const backendOk = (u) => typeof u === "string" && (/^\/[A-Za-z0-9_-]+(\/[A-Za-z0-9_-]+)*$/.test(u) || urlOk(u, true));
+function cleanMsg(m) {
+  if (!m || typeof m !== "object" || typeof m.content !== "string") return null;
+  if (!["user", "assistant", "system"].includes(m.role)) return null;
+  return { role: m.role, content: m.content.slice(0, LIMITS.text), at: num(m.at, Date.now()) };
+}
+function cleanChat(c) {
+  if (!c || typeof c !== "object" || !Array.isArray(c.messages)) return null;
+  const created = num(c.created, Date.now());
+  return { id: str(c.id, 40) || uid(), title: str(c.title, LIMITS.title) || "Sem título",
+    provider: PROVIDERS[c.provider] ? c.provider : "claude", folder: str(c.folder, LIMITS.folder),
+    pinned: c.pinned === true, created, updated: num(c.updated, created),
+    messages: c.messages.slice(0, LIMITS.msgs).map(cleanMsg).filter(Boolean) };
+}
+function cleanFile(f) {
+  if (!f || typeof f !== "object" || typeof f.name !== "string" || !f.name) return null;
+  return { id: str(f.id, 40) || uid(), name: f.name.slice(0, 200), size: Math.max(0, num(f.size, 0)),
+    type: str(f.type, 100) || "desconhecido", note: str(f.note, LIMITS.note), preview: str(f.preview, LIMITS.preview), added: num(f.added, Date.now()) };
+}
+function cleanConn(c) {
+  if (!c || typeof c !== "object" || typeof c.name !== "string" || !c.name.trim() || !urlOk(c.url, false)) return null;
+  return { id: str(c.id, 40) || uid(), name: c.name.trim().slice(0, 60), url: c.url.slice(0, 500), added: num(c.added, Date.now()) };
+}
+// Limpa uma lista e remove ids repetidos.
+function cleanList(arr, fn, max) {
+  const seen = new Set(), out = [];
+  for (const raw of Array.isArray(arr) ? arr : []) {
+    const it = fn(raw);
+    if (it && !seen.has(it.id)) { seen.add(it.id); out.push(it); }
+    if (out.length >= max) break;
+  }
+  return out;
+}
+function cleanState(d) {
+  d = d && typeof d === "object" ? d : {};
+  const chats = cleanList(d.chats, cleanChat, LIMITS.chats);
+  return { chats, files: cleanList(d.files, cleanFile, LIMITS.files),
+    connectors: cleanList(d.connectors, cleanConn, LIMITS.connectors),
+    trash: cleanList(d.trash, cleanChat, LIMITS.trash),
+    provider: PROVIDERS[d.provider] ? d.provider : "claude",
+    activeId: chats.some((c) => c.id === d.activeId) ? d.activeId : null,
+    backendUrl: backendOk(d.backendUrl) ? d.backendUrl : "" };
+}
+
+/* ---------- 4. ARMAZENAMENTO (localStorage com proteção) ---------- */
+// kind: "save" (some quando a gravação volta a funcionar) | "info" | "lock" | "tab"
+function setBanner(msg, kind, act) {
+  const b = $("#banner"); b.textContent = msg || ""; b.hidden = !msg; bannerKind = msg ? kind || "info" : "";
+  if (msg && act) b.append(h("button", { class: "btn ghost sm", type: "button", onclick: act.fn }, act.label));
+}
+function setPersist(ok) {
+  persistOk = ok;
+  $("#persist").textContent = "v" + APP_VERSION + (ok ? " · dados ficam só neste navegador" : " · ⚠ não gravado no navegador");
+}
+// Sufixo para mensagens de sucesso: só aparece se a gravação falhou.
+const note = (ok) => (ok ? "" : stale ? " ⚠ Não gravado: outra aba alterou os dados. Recarregue os dados antes de continuar." : " ⚠ Vale só nesta sessão: não foi possível gravar no navegador.");
+function keepCopy(raw) { try { localStorage.setItem(CONFIG.storageKey + "-corrompido", raw); return true; } catch (e) { return false; } }
+function load() {
+  let raw = null;
+  try { raw = localStorage.getItem(CONFIG.storageKey); myRev = parseInt(localStorage.getItem(CONFIG.revKey) || "0", 10) || 0; }
+  catch (e) { setPersist(false); setBanner("Armazenamento local indisponível: nada será mantido após fechar esta aba. Exporte um backup se precisar.", "save"); return; }
+  if (!raw) return;
+  try {
+    const d = JSON.parse(raw);
+    if (!d || typeof d !== "object" || Array.isArray(d)) throw new Error("formato");
+    const c = cleanState(d);
+    const dropped = ["chats", "files", "connectors"].reduce((n, k) => n + (Array.isArray(d[k]) ? d[k].length - c[k].length : 0), 0);
+    Object.assign(store, c);
+    if (dropped > 0) setBanner(dropped + " item(ns) inválido(s) ou acima do limite foram ignorados ao carregar. " +
+      (keepCopy(raw) ? "Uma cópia dos dados originais foi mantida." : "Não foi possível guardar uma cópia dos dados originais."), "info");
+  } catch (e) {
+    if (keepCopy(raw)) setBanner("Os dados salvos estavam corrompidos. Uma cópia foi mantida em separado e o app começou vazio.", "info");
+    else {   // sem cópia: não grava nada, para não sobrescrever os dados originais
+      locked = true; setPersist(false);
+      setBanner("Os dados salvos estão ilegíveis e não foi possível guardar uma cópia. Para não sobrescrevê-los, nada será gravado agora. Em Histórico, use Importar (substituir) para restaurar um backup.", "lock");
+    }
+  }
+}
+// Outra aba gravou dados: esta aba para de gravar até recarregar, para não sobrescrever o trabalho de lá.
+function markStale() {
+  if (stale || locked) return;
+  stale = true; setPersist(false);
+  setBanner("Os dados foram alterados em outra aba. Para não sobrescrevê-los, esta aba não vai gravar. O que for feito aqui depois disso se perde ao recarregar.", "stale", { label: "Recarregar dados", fn: reloadData });
+}
+function reloadData() {
+  try {
+    const raw = localStorage.getItem(CONFIG.storageKey);
+    myRev = parseInt(localStorage.getItem(CONFIG.revKey) || "0", 10) || 0;
+    Object.assign(store, cleanState(raw ? JSON.parse(raw) : {}));
+  } catch (e) { toast("Não foi possível recarregar os dados: " + e.message); return; }
+  stale = false; setBanner(""); setPersist(true); refresh(); toast("Dados recarregados do armazenamento.");
+}
+// Retorna true só se a gravação realmente aconteceu. Tenta de novo a cada chamada.
+function save() {
+  if (locked || stale) return false;
+  try {
+    const cur = parseInt(localStorage.getItem(CONFIG.revKey) || "0", 10) || 0;
+    if (cur !== myRev) { markStale(); return false; }   // outra aba gravou desde que carregamos
+    localStorage.setItem(CONFIG.storageKey, JSON.stringify(Object.assign({ v: APP_VERSION }, store)));
+    localStorage.setItem(CONFIG.revKey, String(cur + 1)); myRev = cur + 1;
+    if (!persistOk) setPersist(true);
+    if (bannerKind === "save") setBanner("");
+    return true;
+  } catch (e) {
+    setPersist(false);
+    if (bannerKind !== "lock" && bannerKind !== "stale") setBanner("Não foi possível gravar no navegador (armazenamento cheio, bloqueado ou modo privado). O que você fizer agora vale só até fechar esta aba. Exporte um backup.", "save");
+    return false;
+  }
+}
+
+/* ---------- 5. UTILITÁRIOS ---------- */
+const $ = (s) => document.querySelector(s);
+const fmtDate = (t) => new Date(t).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+const fmtSize = (b) => (b < 1024 ? b + " B" : b < 1048576 ? (b / 1024).toFixed(1) + " KB" : (b / 1048576).toFixed(1) + " MB");
+
+// Cria elementos sem innerHTML: todo texto entra como texto puro.
+function h(tag, props, ...kids) {
+  const e = document.createElement(tag);
+  for (const [k, v] of Object.entries(props || {})) {
+    if (k === "class") e.className = v;
+    else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+    else if (v !== false && v != null) e.setAttribute(k, v === true ? "" : v);
+  }
+  kids.flat().forEach((c) => { if (c != null && c !== false) e.append(c instanceof Node ? c : String(c)); });
+  return e;
+}
+const fill = (node, ...kids) => node.replaceChildren(...kids.flat().filter(Boolean));
+
+function toast(msg, act) {
+  const box = $("#toasts");
+  const t = h("div", { class: "toast" }, h("span", {}, msg));
+  if (act) t.append(h("button", { class: "btn ghost sm", type: "button", onclick: () => { act.fn(); t.remove(); } }, act.label));
+  box.append(t);
+  while (box.children.length > 3) box.firstChild.remove();
+  setTimeout(() => t.remove(), act ? 7000 : Math.max(3500, msg.length * 55));
+}
+
+// Remove com opção de desfazer (listas: chats, files, connectors).
+const NOUN = { chats: ["Conversa", "a"], files: ["Arquivo", "o"], connectors: ["Conector", "o"] };
+function removeItem(list, id) {
+  const [noun, g] = NOUN[list];
+  const i = store[list].findIndex((x) => x.id === id);
+  if (i < 0) return;
+  const [item] = store[list].splice(i, 1);
+  if (list === "chats") { store.trash.unshift(item); store.trash.length = Math.min(store.trash.length, LIMITS.trash); }
+  const wasActive = list === "chats" && store.activeId === id;
+  if (wasActive) store.activeId = null;
+  const ok = save(); refresh();
+  toast(noun + " removid" + g + "." + note(ok), { label: "Desfazer", fn: () => {
+    if (store[list].some((x) => x.id === item.id)) return;
+    if (store[list].length >= LIMITS[list]) { toast("Não foi possível restaurar: limite de itens atingido."); return; }
+    store[list].splice(Math.min(i, store[list].length), 0, item);
+    if (list === "chats") store.trash = store.trash.filter((x) => x.id !== item.id);
+    if (wasActive && !store.activeId) store.activeId = item.id;
+    const ok2 = save(); refresh();
+    toast(noun + " restaurad" + g + "." + note(ok2));
+  } });
+}
+function restoreFromTrash(id) {
+  const i = store.trash.findIndex((x) => x.id === id);
+  if (i < 0) return;
+  const [c] = store.trash.splice(i, 1);
+  if (!store.chats.some((x) => x.id === c.id)) {
+    if (store.chats.length >= LIMITS.chats) { store.trash.splice(i, 0, c); toast("Limite de conversas atingido: apague algo antes de restaurar."); return; }
+    store.chats.unshift(c);
+  }
+  const ok = save(); refresh(); toast("Conversa restaurada." + note(ok));
+}
+function purgeFromTrash(id) {
+  if (!confirm("Excluir esta conversa de vez? Não será possível restaurar.")) return;
+  store.trash = store.trash.filter((x) => x.id !== id);
+  const ok = save(); refresh(); toast("Conversa excluída de vez." + note(ok));
+}
+function emptyTrash() {
+  if (!store.trash.length || !confirm("Esvaziar a lixeira (" + store.trash.length + " conversa(s))? Não será possível restaurar.")) return;
+  store.trash = [];
+  const ok = save(); refresh(); toast("Lixeira esvaziada." + note(ok));
+}
+function download(name, text) {
+  const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+  const a = h("a", { href: url, download: name });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
+}
+
+const activeChat = () => store.chats.find((c) => c.id === store.activeId) || null;
+function newChat() {
+  const now = Date.now();
+  const c = { id: uid(), title: "Nova conversa", provider: store.provider, folder: "", pinned: false, created: now, updated: now, messages: [] };
+  store.chats.unshift(c); store.activeId = c.id; save();
+  return c;
+}
+
+/* ---------- 6. BACKEND (conexão honesta) ---------- */
+const base = () => (store.backendUrl || CONFIG.backendUrl).replace(/\/+$/, "");
+
+const netErr = (m) => Object.assign(new Error(m), { net: true });   // erro de rede/timeout
+// Chamada com timeout e mensagens de erro compreensíveis.
+async function api(path, opts, timeoutMs) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+  try {
+    const headers = Object.assign({}, opts && opts.headers, sessionToken ? { Authorization: "Bearer " + sessionToken } : {});
+    const res = await fetch(base() + path, Object.assign({}, opts, { headers, signal: ctrl.signal }));
+    const text = await res.text();
+    let data = null;
+    try { data = text ? JSON.parse(text) : null; } catch (e) { /* não era JSON */ }
+    if (res.status === 401) throw new Error("Token de acesso ausente ou inválido (informe em Ferramentas).");
+    if (res.status === 429) throw new Error(data && typeof data.error === "string" ? data.error : "Limite de requisições atingido. Aguarde um pouco.");
+    if (!res.ok) throw new Error(data && typeof data.error === "string" ? data.error : "Erro HTTP " + res.status);
+    if (data === null || typeof data !== "object") throw new Error("O backend não respondeu em JSON.");
+    return data;
+  } catch (e) {
+    if (e.name === "AbortError") throw netErr("Tempo esgotado (" + timeoutMs / 1000 + " s).");
+    if (e instanceof TypeError) throw netErr(navigator.onLine ? "Não foi possível alcançar o backend (rede ou CORS)." : "Sem internet.");
+    throw e;
+  } finally { clearTimeout(timer); }
+}
+
+const isTesting = () => Object.values(conn).some((s) => s.state === "testing");
+// Só marca "ok" se o backend responder de fato e confirmar a IA.
+async function testAll() {
+  if (!base()) { toast("Defina a URL do backend em Ferramentas."); return; }
+  if (isTesting()) return;
+  const seq = ++testSeq, url = base(), ks = Object.keys(PROVIDERS), res = {};
+  ks.forEach((k) => { conn[k] = { state: "testing" }; });
+  refresh();
+  try {
+    const d = await api(CONFIG.statusPath, { method: "GET" }, CONFIG.statusTimeoutMs);
+    if (!d.providers || typeof d.providers !== "object") throw new Error("Resposta de status fora do formato esperado.");
+    const at = Date.now();
+    ks.forEach((k) => { res[k] = d.providers[k] === true ? { state: "ok", at } : { state: "fail", msg: "backend sem esta IA configurada" }; });
+  } catch (e) { ks.forEach((k) => { res[k] = { state: "fail", msg: e.message }; }); }
+  if (seq !== testSeq || url !== base()) return;   // a URL mudou durante o teste: descarta o resultado
+  Object.assign(conn, res);
+  refresh();
+}
+// Dados do backend são tratados como não confiáveis: tudo é revalidado e truncado.
+function cleanServers(arr) {
+  return (Array.isArray(arr) ? arr : []).slice(0, 30).map((s) => !s || typeof s !== "object" ? null : {
+    name: str(s.name, 80, "Servidor sem nome"),
+    status: ["connected", "disconnected", "error"].includes(s.status) ? s.status : "unknown",
+    tools: (Array.isArray(s.tools) ? s.tools : []).slice(0, 200).map((t) => t && typeof t.name === "string" && t.name
+      ? { name: t.name.slice(0, 80), description: str(t.description, 200), category: str(t.category, 40) || "Sem categoria" } : null).filter(Boolean)
+  }).filter(Boolean);
+}
+function cleanProducts(arr) {
+  return (Array.isArray(arr) ? arr : []).slice(0, 500).map((p) => !p || typeof p !== "object" ? null : {
+    id: str(p.id, 60), name: str(p.name, 120), status: str(p.status, 30),
+    price: typeof p.price === "number" && Number.isFinite(p.price) ? p.price : null, currency: str(p.currency, 5)
+  }).filter(Boolean);
+}
+async function loadMcpTools() {
+  if (!base()) { toast("Defina a URL do backend primeiro."); return; }
+  if (mcpBusy) return;
+  mcpBusy = true; refresh();
+  try {
+    const d = await api(CONFIG.mcpPath, { method: "GET" }, CONFIG.statusTimeoutMs);
+    mcpData = { servers: cleanServers(d.servers), note: str(d.note, 300), at: Date.now() };
+  } catch (e) { mcpData = { error: e.message, at: Date.now() }; }
+  mcpBusy = false; refresh();
+}
+async function loadKiwify() {
+  if (!base()) { toast("Defina a URL do backend primeiro."); return; }
+  if (kwBusy) return;
+  kwBusy = true; refresh();
+  try {
+    const d = await api(CONFIG.kiwifyPath, { method: "GET" }, CONFIG.chatTimeoutMs);
+    kwData = { products: cleanProducts(d.products), at: Date.now() };
+  } catch (e) { kwData = { error: e.message, at: Date.now() }; }
+  kwBusy = false; refresh();
+}
+function connInfo(k) {
+  if (!base()) return { t: "Sem backend", c: "warn" };
+  const s = conn[k];
+  if (s.state === "testing") return { t: "Testando…", c: "warn" };
+  if (s.state === "ok") return { t: "Conectado (testado " + new Date(s.at).toLocaleTimeString("pt-BR", { timeStyle: "short" }) + ")", c: "ok" };
+  if (s.state === "fail") return { t: "Falhou: " + s.msg, c: "err" };
+  return { t: "Backend definido, não testado", c: "warn" };
+}
+// Status geral, sempre derivado do resultado real dos testes.
+function overall() {
+  const ks = Object.keys(PROVIDERS);
+  if (!base()) return { t: "Nenhuma IA conectada", c: "warn", d: "Backend não configurado" };
+  const st = ks.map((k) => conn[k].state);
+  if (st.includes("testing")) return { t: "Testando…", c: "warn" };
+  if (st.every((x) => x === "idle")) return { t: "Teste ainda não realizado", c: "warn" };
+  const ok = ks.filter((k) => conn[k].state === "ok");
+  const why = ks.filter((k) => conn[k].state === "fail").map((k) => PROVIDERS[k].nome + ": " + conn[k].msg).join(" · ");
+  if (ok.length === ks.length) return { t: "Ambas conectadas", c: "ok" };
+  if (ok.length === 1) return { t: "Apenas " + PROVIDERS[ok[0]].nome + " conectado", c: "warn", d: why };
+  return { t: "Nenhuma IA conectada", c: "err", d: why };
+}
+function renderStatus() {
+  const o = overall(), s = $("#bk-status");
+  s.textContent = o.t; s.className = "tag " + o.c; s.title = o.d || o.t;
+}
+
+async function send(text) {
+  const chat = activeChat() || newChat();
+  chat.provider = store.provider;
+  push(chat, "user", text);
+  if (chat.title === "Nova conversa") chat.title = text.slice(0, 48);
+  if (!base()) {
+    push(chat, "system", "Aviso do sistema: nenhuma IA está conectada. Sua mensagem ficou no histórico local. Para receber respostas, configure um backend em Ferramentas.");
+    save(); renderChat(true); return;
+  }
+  busy = true; waitId = chat.id; save(); renderChat(true);
+  const prov = chat.provider;
+  try {
+    const d = await api(CONFIG.chatPath, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ provider: prov,
+        messages: chat.messages.filter((m) => m.role !== "system").map((m) => ({ role: m.role, content: m.content })) })
+    }, CONFIG.chatTimeoutMs);
+    if (typeof d.reply !== "string" || !d.reply.trim()) throw new Error(typeof d.error === "string" ? d.error : "O backend respondeu sem o campo 'reply'.");
+    push(chat, "assistant", d.reply.slice(0, LIMITS.text));
+    conn[prov] = { state: "ok", at: Date.now() };          // resposta real = evidência de conexão
+  } catch (e) {
+    if (e.net) conn[prov] = { state: "fail", msg: e.message };
+    push(chat, "system", "Falha ao obter resposta: " + e.message + " Sua mensagem continua no histórico; envie novamente quando quiser.");
+  } finally {
+    busy = false; waitId = null;
+    const alive = store.chats.includes(chat);
+    save();
+    if (!alive) { toast("A conversa foi apagada antes de a resposta chegar."); refresh(); }
+    else if (current === "chat" && store.activeId === chat.id) { renderStatus(); renderChat(true); }
+    else { toast("Resposta recebida em “" + chat.title + "”."); refresh(); }
+  }
+}
+function push(chat, role, content) {
+  if (chat.messages.length >= LIMITS.msgs) chat.messages.shift();
+  chat.messages.push({ role, content, at: Date.now() });
+  chat.updated = Date.now();
+}
+
+/* ---------- 7. BACKUP (exportar / importar JSON) ---------- */
+const enc = new TextEncoder();
+const bytes = (s) => enc.encode(s).length;
+const BACKUP_KEYS = ["chats", "files", "connectors"];
+
+// Monta o backup em uma ou mais partes. Cada parte respeita LIMITS.backupBytes,
+// o mesmo limite usado na importação, então tudo que é exportado pode ser importado.
+function buildBackup() {
+  const cap = LIMITS.backupBytes, margin = 1024, stamp = new Date().toISOString();
+  const head = bytes(JSON.stringify({ files: store.files, connectors: store.connectors })) + margin;
+  const parts = [{ chats: [], size: head }], skipped = [];
+  for (const c of store.chats) {
+    const s = bytes(JSON.stringify(c)) + 1;
+    if (s + margin > cap) { skipped.push(c.title); continue; }   // grande demais para qualquer arquivo
+    let p = parts[parts.length - 1];
+    if (p.size + s > cap) { p = { chats: [], size: margin }; parts.push(p); }
+    p.chats.push(c); p.size += s;
+  }
+  const backupId = uid(), included = parts.reduce((n, p) => n + p.chats.length, 0);
+  const out = parts.map((p, i) => {
+    const json = JSON.stringify({ app: "central-ias", version: APP_VERSION, exportedAt: stamp, backupId, part: i + 1, parts: parts.length, totalChats: included,
+      chats: p.chats, files: i === 0 ? store.files : [], connectors: i === 0 ? store.connectors : [] });
+    return { json, size: bytes(json) };
+  });
+  return { out, skipped };
+}
+function exportBackup() {
+  if (!store.chats.length && !store.files.length && !store.connectors.length) { toast("Não há nada para exportar ainda."); return; }
+  const cap = LIMITS.backupBytes, { out, skipped } = buildBackup();
+  if (out.some((o) => o.size > cap)) { toast("Não foi possível gerar um backup dentro do limite de " + fmtSize(cap) + " por arquivo."); return; }
+  const day = new Date().toISOString().slice(0, 10);
+  out.forEach((o, i) => setTimeout(() => download("central-ias-backup-" + day + (out.length > 1 ? "-parte-" + (i + 1) + "-de-" + out.length : "") + ".json", o.json), i * 500));
+  let msg = out.length > 1
+    ? "Backup grande: gerado em " + out.length + " arquivos de até " + fmtSize(cap) + ". Para restaurar, selecione todos de uma vez ao importar. Se o navegador perguntar, permita vários downloads."
+    : "Backup gerado (" + fmtSize(out[0].size) + "). Confira o arquivo na pasta de downloads.";
+  if (skipped.length) msg = "Backup INCOMPLETO: " + skipped.length + " conversa(s) maior(es) que " + fmtSize(cap) + " ficaram de fora (" +
+    skipped.slice(0, 3).join(", ") + (skipped.length > 3 ? "…" : "") + "). " + msg;
+  toast(msg);
+}
+
+// Confere se os arquivos selecionados formam UM backup completo: mesmo backup, sem partes repetidas ou faltando.
+function checkParts(docs) {
+  const num = (v) => (Number.isInteger(v) && v > 0 ? v : null);
+  const idOf = (d) => String(d.backupId || d.exportedAt || "");
+  const n = num(docs[0].d.parts) || 1;
+  if (docs.length === 1 && n === 1) return;   // arquivo único e completo
+  if (new Set(docs.map(({ d }) => idOf(d))).size > 1) throw new Error("os arquivos pertencem a backups diferentes. Importe cada backup separadamente, com todas as suas partes.");
+  const seen = new Map();
+  for (const { name, d } of docs) {
+    const p = num(d.part), t = num(d.parts);
+    if (!p || !t || t !== n || p > t) throw new Error("“" + name + "” não tem informação de partes válida ou não combina com os outros arquivos.");
+    if (seen.has(p)) throw new Error("a parte " + p + " de " + t + " foi selecionada mais de uma vez (“" + seen.get(p) + "” e “" + name + "”).");
+    seen.set(p, name);
+  }
+  const missing = [];
+  for (let i = 1; i <= n; i++) if (!seen.has(i)) missing.push(i);
+  if (missing.length) throw new Error("faltam as partes " + missing.join(", ") + " de " + n + ". Selecione todas as partes do mesmo backup de uma vez.");
+  const withTotal = docs.find(({ d }) => Number.isInteger(d.totalChats));
+  if (withTotal) {
+    const got = docs.reduce((sum, { d }) => sum + d.chats.length, 0);
+    if (got !== withTotal.d.totalChats) throw new Error("as partes não batem: esperadas " + withTotal.d.totalChats + " conversas, encontradas " + got + ". Algum arquivo pode ter sido alterado.");
+  }
+}
+// Importa um ou mais arquivos. Valida TUDO antes de alterar qualquer dado e permite desfazer.
+async function importBackup(files, replace) {
+  try {
+    if (!files.length) return;
+    const cap = LIMITS.backupBytes, merged = { chats: [], files: [], connectors: [] };
+    let total = 0;
+    const docs = [];
+    for (const f of files) {
+      if (f.size > cap) throw new Error("“" + f.name + "” tem " + fmtSize(f.size) + " e o limite é " + fmtSize(cap) + " por arquivo. Gere o backup de novo pelo botão Exportar, que divide em partes.");
+      let d;
+      try { d = JSON.parse(await f.text()); } catch (e) { throw new Error("“" + f.name + "” não é um JSON válido."); }
+      if (!d || d.app !== "central-ias" || !Array.isArray(d.chats)) throw new Error("“" + f.name + "” não parece um backup da Central de IAs.");
+      docs.push({ name: f.name, d });
+      BACKUP_KEYS.forEach((k) => { if (Array.isArray(d[k])) { total += d[k].length; merged[k] = merged[k].concat(d[k]); } });
+    }
+    checkParts(docs);   // nada é alterado se as partes não formarem um backup completo
+    const inc = cleanState(merged);
+    const valid = BACKUP_KEYS.reduce((n, k) => n + inc[k].length, 0);
+    if (!valid) throw new Error("nenhum item válido encontrado.");
+    const baseData = replace ? { chats: [], files: [], connectors: [] } : store;
+    const next = {};
+    let dup = 0, over = 0, added = 0;
+    BACKUP_KEYS.forEach((k) => {
+      const have = new Set(baseData[k].map((x) => x.id));
+      const add = inc[k].filter((x) => !have.has(x.id));
+      dup += inc[k].length - add.length;
+      const all = baseData[k].concat(add);
+      over += Math.max(0, all.length - LIMITS[k]);
+      next[k] = all.slice(0, LIMITS[k]);
+      added += next[k].length - baseData[k].length;
+    });
+    if (replace && !confirm("Substituir TODOS os dados atuais (" + store.chats.length + " conversa(s), " + store.files.length + " arquivo(s), " +
+      store.connectors.length + " conector(es)) por " + valid + " item(ns) do backup?\n\nDica: exporte um backup antes. Depois de confirmar, você terá alguns segundos para desfazer.")) return;
+
+    const snap = { chats: store.chats, files: store.files, connectors: store.connectors, activeId: store.activeId };
+    const wasOk = persistOk;
+    Object.assign(store, next);
+    if (!store.chats.some((c) => c.id === store.activeId)) store.activeId = null;
+    if (replace) locked = false;
+    const ok = save();
+    if (!ok && (wasOk || stale)) {   // não coube no navegador: volta ao estado anterior para não deixar dados pela metade
+      Object.assign(store, snap); save(); refresh();
+      throw new Error(stale ? "outra aba alterou os dados. Recarregue os dados e tente de novo. Nada foi alterado." : "os dados não couberam no armazenamento do navegador. Nada foi alterado.");
+    }
+    refresh();
+    toast("Importado(s) " + added + " item(ns)" + (dup ? "; " + dup + " já existia(m)" : "") +
+      (total > valid ? "; " + (total - valid) + " inválido(s) ou acima do limite ignorado(s)" : "") +
+      (over ? "; " + over + " não coube(ram) no limite de itens" : "") + "." + note(ok),
+      { label: "Desfazer", fn: () => { Object.assign(store, snap); const ok2 = save(); refresh(); toast("Importação desfeita." + note(ok2)); } });
+  } catch (e) { toast("Importação cancelada: " + e.message); }
+}
+
+/* ---------- 8. TELAS ---------- */
+const RENDER = { painel: () => renderPainel(), chat: () => renderChat(), historico: () => renderHistorico(),
+  arquivos: () => renderArquivos(), mcp: () => renderMcp(), kiwify: () => renderKiwify() };
+
+function show(id, focusTitle) {
+  current = id;
+  VIEWS.forEach((v) => { $("#v-" + v.id).hidden = v.id !== id; });
+  $("#title").textContent = VIEWS.find((v) => v.id === id).nome;
+  document.title = $("#title").textContent + " · Central de IAs";
+  renderNav(); renderStatus(); RENDER[id]();
+  if (focusTitle) $("#title").focus({ preventScroll: true });
+}
+function go(id) { if (location.hash === "#" + id) show(id, true); else location.hash = id; }
+function refresh() { renderStatus(); RENDER[current](); }
+
+function renderNav() {
+  fill($("#nav"), VIEWS.map((v, i) => h("button", { type: "button", title: "Alt+" + (i + 1),
+    "aria-current": v.id === current ? "page" : null, onclick: () => go(v.id) }, h("i", { "aria-hidden": "true" }, v.icone), v.nome)));
+}
+
+/* --- Painel --- */
+function renderPainel() {
+  const card = (k) => {
+    const p = PROVIDERS[k], ci = connInfo(k);
+    return h("div", { class: "card" },
+      h("h2", {}, h("span", { class: "dot", style: "background:" + p.cor }), p.nome),
+      h("p", {}, p.desc),
+      h("div", { class: "row", style: "margin-top:12px" },
+        h("span", { class: "tag " + ci.c, title: ci.t }, ci.t),
+        h("button", { class: "btn", type: "button", onclick: () => { store.provider = k; save(); go("chat"); } }, "Conversar")));
+  };
+  const rec = (nome, ok, nota) => h("tr", {}, h("td", {}, nome),
+    h("td", {}, h("span", { class: "tag " + (ok ? "ok" : "warn") }, ok ? "Funciona" : "Precisa de backend")), h("td", { class: "muted" }, nota));
+  fill($("#v-painel"), h("div", { class: "wrap" },
+    h("div", { class: "grid" }, card("chatgpt"), card("claude")),
+    h("div", { class: "card row sp" },
+      h("p", {}, store.chats.length + " conversa(s) · " + store.files.length + " arquivo(s) · " + store.connectors.length + " conector(es)"),
+      h("button", { class: "btn ghost sm", type: "button", disabled: !base() || isTesting(), onclick: testAll }, "Testar conexão")),
+    h("div", { class: "card", style: "overflow-x:auto" }, h("h2", {}, "O que funciona hoje"),
+      h("table", {},
+        h("tr", {}, h("th", {}, "Recurso"), h("th", {}, "Status"), h("th", {}, "Observação")),
+        rec("Interface e navegação", true, "100% no navegador, inclusive offline."),
+        rec("Histórico (renomear, fixar, pastas)", true, "Salvo neste aparelho."),
+        rec("Backup JSON", true, "Exportar e importar; partes conferidas (mesmo backup, nenhuma faltando)."),
+        rec("Lixeira e várias abas", true, "Restaurar conversas; aba desatualizada não sobrescreve dados."),
+        rec("Lista de arquivos", true, "Só nome, tamanho, tipo e nota; o conteúdo não é enviado."),
+        rec("Registro de conectores MCP", true, "Só registro local; não conecta."),
+        rec("Respostas do ChatGPT / Claude", false, "Função serverless com as chaves guardadas lá."),
+        rec("Listar ferramentas MCP e produtos Kiwify", false, "Telas prontas; dependem de backend e credenciais reais."),
+        rec("Conexão real com MCP", false, "Backend que fale o protocolo MCP."),
+        rec("Leitura de arquivos pelas IAs", false, "Upload e armazenamento no backend."),
+        rec("Integração Kiwify", false, "Backend e autorização da loja."),
+        rec("IAs trabalhando em conjunto", false, "Orquestração no backend (fase futura).")))));
+}
+
+/* --- Conversa --- */
+function renderChat(scrollDown) {
+  const chat = activeChat();
+  const box = h("div", { class: "msgs", role: "log", "aria-label": "Mensagens", "aria-live": "polite" });
+  if (!chat || !chat.messages.length) box.append(h("div", { class: "empty" }, "Escolha uma IA e escreva a primeira mensagem."));
+  else chat.messages.forEach((m) => box.append(h("div", { class: "msg " + m.role, title: fmtDate(m.at) }, m.content)));
+  if (busy && chat && waitId === chat.id) box.append(h("div", { class: "msg wait" }, PROVIDERS[chat.provider].nome + " está respondendo…"));
+
+  const ta = h("textarea", { rows: "1", placeholder: "Escreva sua mensagem… (Ctrl+Enter envia)", "aria-label": "Mensagem", maxlength: "20000",
+    oninput: (e) => { draft = e.target.value; e.target.style.height = "auto"; e.target.style.height = Math.min(e.target.scrollHeight, 140) + "px"; },
+    onkeydown: (e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); doSend(); } } });
+  ta.value = draft;
+  const doSend = () => {
+    const txt = ta.value.trim();
+    if (!txt || busy) return;
+    draft = ""; send(txt);
+  };
+  const ci = connInfo(store.provider);
+  const seg = h("div", { class: "seg", role: "group", "aria-label": "Escolher IA" },
+    Object.keys(PROVIDERS).map((k) => h("button", { type: "button", "data-p": k, "aria-pressed": String(store.provider === k),
+      onclick: () => { store.provider = k; save(); renderChat(); } }, PROVIDERS[k].nome)));
+  fill($("#v-chat"), box, h("div", { class: "composer" },
+    h("div", { class: "row sp" }, seg, h("span", { class: "tag " + ci.c, title: ci.t }, ci.t)),
+    ta,
+    h("div", { class: "row sp" },
+      h("button", { class: "btn ghost", type: "button", disabled: busy, onclick: () => { newChat(); draft = ""; renderChat(); } }, "Nova conversa"),
+      h("button", { class: "btn", type: "button", disabled: busy, onclick: doSend }, busy ? "Aguardando…" : "Enviar"))));
+  if (draft) ta.dispatchEvent(new Event("input"));
+  box.scrollTop = box.scrollHeight;
+  if (scrollDown) ta.focus({ preventScroll: true });
+}
+
+/* --- Histórico --- */
+function renderHistorico() {
+  const fileIn = h("input", { type: "file", accept: "application/json,.json", multiple: true, hidden: true });
+  let replaceMode = false;
+  fileIn.addEventListener("change", () => { const fs = [...fileIn.files]; fileIn.value = ""; importBackup(fs, replaceMode); });
+  const pick = (replace) => { replaceMode = replace; fileIn.click(); };
+  const search = h("input", { type: "search", placeholder: "Buscar por título ou pasta…", "aria-label": "Buscar conversas", value: histFilter,
+    oninput: (e) => { histFilter = e.target.value; drawList(); } });
+  const chips = h("div", { class: "chips", role: "group", "aria-label": "Filtrar por pasta" });
+  const list = h("div", { class: "list" });
+  const dl = h("datalist", { id: "folders" });
+
+  function drawList() {
+    const folders = [...new Set(store.chats.map((c) => c.folder).filter(Boolean))].sort();
+    if (histFolder && !folders.includes(histFolder)) histFolder = "";
+    fill(dl, folders.map((f) => h("option", { value: f })));
+    fill(chips, ["", ...folders].map((f) => h("button", { type: "button", class: "chip", "aria-pressed": String(histFolder === f),
+      onclick: () => { histFolder = f; drawList(); } }, f || "Todas")));
+    chips.hidden = !folders.length;
+    const q = histFilter.toLowerCase();
+    const items = store.chats.filter((c) => (!histFolder || c.folder === histFolder) && (c.title + " " + c.folder).toLowerCase().includes(q))
+      .sort((a, b) => (b.pinned - a.pinned) || (b.updated - a.updated));
+    fill(list, items.length ? items.map(chatItem) : h("div", { class: "empty" }, store.chats.length ? "Nada encontrado." : "Nenhuma conversa ainda."));
+  }
+  function chatItem(c) {
+    const pin = h("button", { class: "pin", type: "button", "aria-pressed": String(c.pinned), title: c.pinned ? "Desafixar" : "Fixar no topo",
+      "aria-label": (c.pinned ? "Desafixar " : "Fixar ") + c.title, onclick: () => { c.pinned = !c.pinned; save(); drawList(); } }, "📌");
+    const open = h("button", { class: "link", type: "button", onclick: () => { store.activeId = c.id; store.provider = c.provider; save(); go("chat"); } }, c.title);
+    const meta = h("span", { class: "muted" }, PROVIDERS[c.provider].nome + (c.folder ? " · 📂 " + c.folder : "") + " · " + fmtDate(c.updated) + " · " + c.messages.length + " msg");
+    const el = h("div", { class: "item" + (c.pinned ? " pinned" : "") }, pin, h("div", { class: "t" }, open, meta),
+      h("button", { class: "btn ghost sm", type: "button", "aria-expanded": String(editingId === c.id), onclick: () => { editingId = editingId === c.id ? null : c.id; drawList(); } }, "Editar"),
+      h("button", { class: "btn danger sm", type: "button", "aria-label": "Apagar " + c.title, onclick: () => removeItem("chats", c.id, "Conversa") }, "Apagar"));
+    if (editingId === c.id) {
+      const ti = h("input", { type: "text", value: c.title, maxlength: String(LIMITS.title), "aria-label": "Título" });
+      const fo = h("input", { type: "text", value: c.folder, maxlength: String(LIMITS.folder), list: "folders", placeholder: "Pasta (opcional)", "aria-label": "Pasta" });
+      const ok = () => {
+        const t = ti.value.trim();
+        if (!t) { toast("O título não pode ficar vazio."); ti.focus(); return; }
+        c.title = t; c.folder = fo.value.trim().slice(0, LIMITS.folder); editingId = null; save(); drawList();
+      };
+      const cancel = () => { editingId = null; drawList(); };
+      const keys = (e) => { if (e.key === "Enter") ok(); else if (e.key === "Escape") cancel(); };
+      ti.addEventListener("keydown", keys); fo.addEventListener("keydown", keys);
+      el.append(h("div", { class: "edit" }, ti, fo, h("div", { class: "row" },
+        h("button", { class: "btn sm", type: "button", onclick: ok }, "Salvar"),
+        h("button", { class: "btn ghost sm", type: "button", onclick: cancel }, "Cancelar"))));
+      setTimeout(() => ti.focus(), 0);
+    }
+    return el;
+  }
+  const trashCard = h("div", { class: "card", style: "margin-top:14px" }, h("h2", {}, "Lixeira (" + store.trash.length + ")"),
+    h("p", {}, "Conversas apagadas ficam aqui (as últimas " + LIMITS.trash + "). A lixeira não entra no backup."),
+    store.trash.length ? h("div", { class: "list" }, store.trash.map((c) => h("div", { class: "item" },
+      h("div", { class: "t" }, h("b", {}, c.title), h("span", { class: "muted" }, c.messages.length + " msg · " + fmtDate(c.updated))),
+      h("button", { class: "btn ghost sm", type: "button", "aria-label": "Restaurar " + c.title, onclick: () => restoreFromTrash(c.id) }, "Restaurar"),
+      h("button", { class: "btn danger sm", type: "button", "aria-label": "Excluir de vez " + c.title, onclick: () => purgeFromTrash(c.id) }, "Excluir de vez"))))
+      : h("div", { class: "empty", style: "margin-top:10px" }, "Lixeira vazia."),
+    store.trash.length ? h("div", { class: "row", style: "margin-top:10px" }, h("button", { class: "btn danger sm", type: "button", onclick: emptyTrash }, "Esvaziar lixeira")) : null);
+  fill($("#v-historico"), h("div", { class: "wrap" },
+    h("div", { class: "card" }, h("h2", {}, "Backup das conversas"),
+      h("p", {}, "Exporta conversas, arquivos registrados e conectores em JSON (até " + fmtSize(LIMITS.backupBytes) + " por arquivo; acima disso o backup é dividido em partes). Na importação você pode escolher vários arquivos de uma vez; tudo é validado antes de alterar qualquer dado."),
+      h("div", { class: "row", style: "margin-top:12px" },
+        h("button", { class: "btn", type: "button", onclick: exportBackup }, "Exportar JSON"),
+        h("button", { class: "btn ghost", type: "button", onclick: () => pick(false) }, "Importar (mesclar)"),
+        h("button", { class: "btn danger", type: "button", onclick: () => pick(true) }, "Importar (substituir)"), fileIn)),
+    search, chips, dl, list, trashCard));
+  drawList();
+}
+
+/* --- Arquivos --- */
+function renderArquivos() {
+  // Valida formato e tamanho; guarda só metadados e, para texto, uma prévia curta.
+  const addFiles = async (fl) => {
+    let added = 0, dup = 0;
+    const rej = [];
+    for (const f of fl) {
+      const ext = (f.name.split(".").pop() || "").toLowerCase();
+      if (!ALLOWED_EXT.includes(ext)) { rej.push("“" + f.name + "”: formato não aceito"); continue; }
+      if (f.size > LIMITS.fileBytes) { rej.push("“" + f.name + "”: " + fmtSize(f.size) + " passa do limite de " + fmtSize(LIMITS.fileBytes)); continue; }
+      if (store.files.some((x) => x.name === f.name && x.size === f.size)) { dup++; continue; }
+      if (store.files.length >= LIMITS.files) { rej.push("limite de " + LIMITS.files + " arquivos atingido"); break; }
+      let preview = "";
+      if (TEXT_EXT.includes(ext)) { try { preview = (await f.slice(0, 2000).text()).replace(/\0/g, "").trim().slice(0, LIMITS.preview); } catch (e) { /* sem prévia */ } }
+      store.files.unshift({ id: uid(), name: f.name.slice(0, 200), size: f.size, type: f.type || ext, note: "", preview, added: Date.now() });
+      added++;
+    }
+    const ok = save(); refresh();
+    if (added || dup) toast(added + " registrado(s)" + (dup ? "; " + dup + " já existia(m)" : "") + "." + note(ok));
+    if (rej.length) toast("Não registrados: " + rej.slice(0, 3).join("; ") + (rej.length > 3 ? "; e mais " + (rej.length - 3) : "") + ".");
+  };
+  const inp = h("input", { type: "file", multiple: true, hidden: true, accept: ALLOWED_EXT.map((x) => "." + x).join(","), onchange: (e) => { addFiles([...e.target.files]); e.target.value = ""; } });
+  const drop = h("div", { class: "drop" }, "Arraste arquivos aqui ou ", h("button", { class: "btn sm", type: "button", onclick: () => inp.click() }, "escolher arquivos"), inp);
+  drop.addEventListener("dragover", (e) => { e.preventDefault(); drop.classList.add("over"); });
+  drop.addEventListener("dragleave", () => drop.classList.remove("over"));
+  drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove("over"); addFiles([...e.dataTransfer.files]); });
+
+  const sum = h("p", { class: "muted", role: "status" });
+  const list = h("div", { class: "list" });
+  function draw() {
+    const q = fileFilter.toLowerCase();
+    const sorters = { recent: (a, b) => b.added - a.added, name: (a, b) => a.name.localeCompare(b.name, "pt-BR"), size: (a, b) => b.size - a.size };
+    const items = store.files.filter((f) => (f.name + " " + f.note).toLowerCase().includes(q)).sort(sorters[fileSort]);
+    sum.textContent = items.length + " de " + store.files.length + " arquivo(s) · " + fmtSize(store.files.reduce((s, f) => s + f.size, 0)) + " no total";
+    fill(list, items.length ? items.map((f) => h("div", { class: "item" },
+      h("div", { class: "t" }, h("b", {}, f.name), h("span", { class: "muted" }, fmtSize(f.size) + " · " + f.type + " · " + fmtDate(f.added)),
+        h("input", { type: "text", value: f.note, maxlength: String(LIMITS.note), placeholder: "Adicionar nota…", "aria-label": "Nota para " + f.name,
+          style: "margin-top:6px", onchange: (e) => { f.note = e.target.value.trim().slice(0, LIMITS.note); save(); } }),
+        f.preview ? h("details", {}, h("summary", { class: "muted" }, "Prévia do texto"), h("pre", { class: "prev" }, f.preview)) : null),
+      h("button", { class: "btn danger sm", type: "button", "aria-label": "Remover " + f.name, onclick: () => removeItem("files", f.id, "Arquivo") }, "Remover")))
+      : h("div", { class: "empty" }, store.files.length ? "Nada encontrado." : "Nenhum arquivo registrado."));
+  }
+  fill($("#v-arquivos"), h("div", { class: "wrap" },
+    h("div", { class: "card" }, h("h2", {}, "Arquivos registrados"),
+      h("p", {}, "Formatos aceitos: " + ALLOWED_EXT.join(", ") + " · até " + fmtSize(LIMITS.fileBytes) + " por arquivo. Ficam só nome, tamanho, tipo e (em textos) uma prévia curta neste aparelho. O conteúdo NÃO é enviado a nenhuma IA: isso exige backend com armazenamento."),
+      h("div", { style: "margin-top:12px" }, drop)),
+    h("div", { class: "grid" },
+      h("input", { type: "search", placeholder: "Buscar arquivos…", "aria-label": "Buscar arquivos", value: fileFilter, oninput: (e) => { fileFilter = e.target.value; draw(); } }),
+      h("select", { "aria-label": "Ordenar por", onchange: (e) => { fileSort = e.target.value; draw(); } },
+        [["recent", "Mais recentes"], ["name", "Nome (A–Z)"], ["size", "Maior tamanho"]].map(([v, t]) => h("option", { value: v, selected: fileSort === v }, t)))),
+    h("div", { class: "row sp", style: "margin-top:12px" }, sum,
+      h("button", { class: "btn danger sm", type: "button", disabled: !store.files.length, onclick: () => {
+        if (!confirm("Remover todos os " + store.files.length + " arquivos registrados?")) return;
+        const snap = store.files; store.files = []; const ok = save(); refresh();
+        toast("Registros removidos." + note(ok), { label: "Desfazer", fn: () => {
+          const ids = new Set(snap.map((x) => x.id));
+          store.files = snap.concat(store.files.filter((x) => !ids.has(x.id))).slice(0, LIMITS.files);
+          const ok2 = save(); refresh(); toast("Registros restaurados." + note(ok2)); } }); } }, "Limpar todos")),
+    list));
+  draw();
+}
+
+/* --- Ferramentas / MCP --- */
+// Mostra somente o que o backend informar; nada é inventado e não há execução ainda.
+function mcpCard() {
+  const d = mcpData;
+  let body;
+  if (mcpBusy) body = h("p", {}, "Consultando o backend…");
+  else if (!d) body = h("p", {}, "Ainda não consultado. As ferramentas só aparecem se o backend reportar servidores MCP reais.");
+  else if (d.error) body = h("span", { class: "tag err", title: d.error }, "Falhou: " + d.error);
+  else if (!d.servers.length) body = h("p", {}, "O backend não reportou nenhum servidor MCP." + (d.note ? " " + d.note : ""));
+  else body = h("div", { class: "list" }, d.servers.map((sv) => {
+    const cats = {};
+    sv.tools.forEach((t) => { (cats[t.category] = cats[t.category] || []).push(t); });
+    const st = { connected: ["Conectado (informado pelo backend)", "ok"], error: ["Com erro", "err"], disconnected: ["Desconectado", "warn"], unknown: ["Estado desconhecido", "warn"] }[sv.status];
+    return h("div", { class: "item", style: "align-items:flex-start" },
+      h("div", { class: "t" }, h("b", {}, sv.name), Object.keys(cats).sort().map((c) => h("div", { style: "margin-top:6px" },
+        h("span", { class: "muted" }, "📂 " + c), cats[c].map((t) => h("div", { style: "font-size:14px" }, t.name + (t.description ? " — " + t.description : "")))))),
+      h("span", { class: "tag " + st[1] }, st[0]));
+  }));
+  return h("div", { class: "card" }, h("h2", {}, "Ferramentas MCP do backend"),
+    h("p", {}, "Lista só o que o backend informar. A execução de ferramentas ainda não está disponível."),
+    h("div", { class: "row", style: "margin:10px 0" },
+      h("button", { class: "btn ghost", type: "button", disabled: !base() || mcpBusy, onclick: loadMcpTools }, "Consultar backend"),
+      d && !d.error ? h("span", { class: "muted" }, "Consultado às " + new Date(d.at).toLocaleTimeString("pt-BR", { timeStyle: "short" })) : null), body);
+}
+function renderMcp() {
+  const burl = h("input", { type: "text", value: store.backendUrl, placeholder: CONFIG.backendUrl || "/api ou https://…", "aria-label": "URL do backend", inputmode: "url", autocomplete: "off", spellcheck: "false" });
+  const tok = h("input", { type: "password", placeholder: "Token de acesso (só nesta sessão)", "aria-label": "Token de acesso", autocomplete: "off" });
+  const saveBackend = () => {
+    const v = burl.value.trim().replace(/\/+$/, "");
+    if (v && !backendOk(v)) { toast("URL inválida: use https:// (sem usuário, senha ou parâmetros) ou um caminho como /api."); return; }
+    testSeq++; store.backendUrl = v; Object.keys(PROVIDERS).forEach((k) => { conn[k] = { state: "idle" }; });
+    const ok = save(); refresh(); toast((v ? "URL do backend atualizada (ainda não testada)." : "URL do backend removida.") + note(ok));
+  };
+  const nome = h("input", { type: "text", placeholder: "Nome do conector", maxlength: "60", "aria-label": "Nome do conector" });
+  const url = h("input", { type: "url", placeholder: "https://", inputmode: "url", autocomplete: "off", "aria-label": "URL do servidor MCP" });
+  const add = () => {
+    const n = nome.value.trim(), u = url.value.trim();
+    if (!n) { toast("Informe um nome."); nome.focus(); return; }
+    if (!urlOk(u, false)) { toast("Use uma URL https:// sem usuário, senha ou parâmetros."); url.focus(); return; }
+    if (store.connectors.length >= LIMITS.connectors) { toast("Limite de conectores atingido."); return; }
+    store.connectors.unshift({ id: uid(), name: n.slice(0, 60), url: u.slice(0, 500), added: Date.now() });
+    const ok = save(); refresh(); toast("Conector registrado (só registro local; não conecta)." + note(ok));
+  };
+  fill($("#v-mcp"), h("div", { class: "wrap" },
+    h("div", { class: "card" }, h("h2", {}, "Backend"),
+      h("p", {}, "URL do seu backend (por exemplo, funções do Netlify). Ele deve expor " + CONFIG.statusPath + ", " + CONFIG.chatPath + ", " + CONFIG.mcpPath + " e " + CONFIG.kiwifyPath + ". Chaves de API ficam só no servidor. O token de acesso (APP_ACCESS_TOKEN) fica só em memória e nunca é salvo nem entra no backup. Use /api se o backend estiver no mesmo site."),
+      h("div", { class: "grid", style: "margin-top:12px" }, burl, tok),
+      h("div", { class: "row", style: "margin-top:10px" },
+        h("button", { class: "btn", type: "button", onclick: saveBackend }, "Salvar"),
+        h("button", { class: "btn ghost", type: "button", onclick: () => { sessionToken = tok.value.trim(); tok.value = ""; toast(sessionToken ? "Token mantido só em memória nesta sessão." : "Token removido."); } }, "Usar token"),
+        h("button", { class: "btn ghost", type: "button", disabled: !base() || isTesting(), onclick: testAll }, "Testar conexão")),
+      h("div", { class: "row", style: "margin-top:12px" }, Object.keys(PROVIDERS).map((k) => {
+        const ci = connInfo(k);
+        return h("span", { class: "tag " + ci.c, title: ci.t }, PROVIDERS[k].nome + ": " + ci.t);
+      }))),
+    mcpCard(),
+    h("div", { class: "card" }, h("h2", {}, "Conectores MCP"),
+      h("p", {}, "Registro local dos servidores MCP que você pretende usar. Nada é conectado a partir daqui; a conexão real precisa de backend. Informe só URLs que você conhece."),
+      h("div", { class: "grid", style: "margin-top:12px" }, nome, url),
+      h("div", { class: "row", style: "margin-top:10px" }, h("button", { class: "btn", type: "button", onclick: add }, "Registrar"))),
+    h("div", { class: "list" }, store.connectors.length ? store.connectors.map((c) => h("div", { class: "item" },
+      h("div", { class: "t" }, h("b", {}, c.name), h("span", { class: "muted", style: "overflow-wrap:anywhere" }, c.url)),
+      h("span", { class: "tag warn" }, "Só registrado"),
+      h("button", { class: "btn danger sm", type: "button", "aria-label": "Remover " + c.name, onclick: () => removeItem("connectors", c.id, "Conector") }, "Remover")))
+      : h("div", { class: "empty" }, "Nenhum conector registrado."))));
+}
+
+/* --- Kiwify --- */
+// Somente consulta, com dados reais do backend. Operações administrativas exigirão permissões e confirmação no backend.
+function renderKiwify() {
+  const d = kwData;
+  const list = h("div", { class: "list" });
+  function draw() {
+    if (kwBusy) { fill(list, h("div", { class: "empty" }, "Consultando o backend…")); return; }
+    if (!d) { fill(list, h("div", { class: "empty" }, "Nenhuma consulta feita. Nada é exibido sem dados reais do backend.")); return; }
+    if (d.error) { fill(list, h("div", { class: "empty" }, h("span", { class: "tag err" }, "Falhou: " + d.error))); return; }
+    const q = kwFilter.toLowerCase();
+    const items = d.products.filter((p) => (p.name + " " + p.id).toLowerCase().includes(q));
+    fill(list, items.length ? items.map((p) => h("div", { class: "item" },
+      h("div", { class: "t" }, h("b", {}, p.name || "(sem nome)"),
+        h("span", { class: "muted" }, "ID " + p.id + (p.price !== null ? " · " + p.price.toFixed(2) + (p.currency ? " " + p.currency : "") : ""))),
+      p.status ? h("span", { class: "tag" }, p.status) : null))
+      : h("div", { class: "empty" }, d.products.length ? "Nada encontrado." : "O backend não retornou produtos."));
+  }
+  fill($("#v-kiwify"), h("div", { class: "wrap" }, h("div", { class: "card" },
+    h("div", { class: "row sp" }, h("h2", {}, "Produtos da Kiwify"), h("span", { class: "tag warn" }, "Depende do backend")),
+    h("p", {}, "Consulta os produtos pelo backend. O backend deste projeto ainda responde que a integração não está implementada, e nenhum dado é inventado aqui."),
+    h("div", { class: "row", style: "margin-top:12px" },
+      h("button", { class: "btn", type: "button", disabled: !base() || kwBusy, onclick: loadKiwify }, "Consultar produtos"),
+      d && !d.error ? h("span", { class: "muted" }, "Consultado às " + new Date(d.at).toLocaleTimeString("pt-BR", { timeStyle: "short" })) : null),
+    h("div", { style: "margin-top:12px" }, h("input", { type: "search", placeholder: "Buscar produtos…", "aria-label": "Buscar produtos", value: kwFilter,
+      oninput: (e) => { kwFilter = e.target.value; draw(); } }))), list));
+  draw();
+}
+
+/* ---------- 9. INÍCIO ---------- */
+load();
+const routeId = () => { const id = location.hash.slice(1); return VIEWS.some((v) => v.id === id) ? id : null; };
+window.addEventListener("hashchange", () => { const id = routeId(); if (id) show(id, true); });
+window.addEventListener("online", refresh);
+window.addEventListener("offline", refresh);
+// Outra aba gravou dados: esta aba passa a ficar desatualizada e para de gravar.
+window.addEventListener("storage", (e) => { if (e.key === CONFIG.storageKey || e.key === CONFIG.revKey) markStale(); });
+$("#skip").addEventListener("click", () => $("#title").focus());
+document.addEventListener("keydown", (e) => {   // Alt+1..6 troca de tela
+  const m = e.altKey && /^Digit([1-6])$/.exec(e.code);
+  if (m) { e.preventDefault(); go(VIEWS[+m[1] - 1].id); }
 });
+show(routeId() || "painel");
 </script>
 </body>
 </html>
